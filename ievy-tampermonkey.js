@@ -32,17 +32,6 @@ class FilterResult {
     }
 }
 
-/**
- * A class responsible for managing all the stuff.
- */
-class Comments {
-    /**
-     * Update all nodes for potential changes.
-     */
-    update() {
-    }
-}
-
 class FilterSettings {
     constructor() {
         this._gravatars = new Set();
@@ -81,6 +70,30 @@ class FilterSettings {
         }
 
         return FilterResult.unfiltered;
+    }
+}
+
+/**
+ * A class responsible for managing all the stuff.
+ */
+class Comments {
+    /**
+     * Create a new viewmodel of all comments on a page.
+     * @param {FilterSettings} settings - Settings of a filter.
+     */
+    constructor(settings) {
+        this.settings = settings;
+        this.comments = [];
+    }
+
+    add(comment) {
+        this.comments.push(comment);
+    }
+
+    /**
+     * Update all nodes for potential changes.
+     */
+    update() {
     }
 }
 
@@ -242,10 +255,10 @@ settings.filterGravatar('ea0af1e6dffdfa291380200694704d13');
 settings.filterAuthor('Pushmi-Pullyu');
 // HTMLCollection
 const commentsNodes = document.getElementsByClassName('comment');
-const comments = [];
+const comments = new Comments(settings);
 for (let commentNode of commentsNodes) {
 	const comment = new Comment(commentNode);
-	comments.push(comment);
+	comments.add(comment);
 	console.log('Added a comment for author '+ comment.authorName);
 
     comment.addMenu();
