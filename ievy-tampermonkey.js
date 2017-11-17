@@ -7,6 +7,7 @@
 // @match        https://insideevs.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_addStyle
 // @run-at document-end
 // ==/UserScript==
 
@@ -104,14 +105,25 @@ class Comment {
 	 * Adds a node handle to the comment, unless it already exists.
 	 */
 	addMenu() {
-		if (this._menuNode) {
+		if (this._actionsNode) {
 			return;
 		}
 
-		const menuNode = document.createElement('ul');
+        const menuNode = document.createElement('div');
 		this._commentBodyNode.insertBefore(menuNode, this._metaDataNode);
 
-		this._menuNode = menuNode;
+        const dropdownArrow = document.createElement('a');
+        dropdownArrow.setAttribute('href','#');
+        dropdownArrow.appendChild(document.createTextNode('\u2193'));
+        dropdownArrow.addEventListener('click', function() {
+
+        });
+        menuNode.appendChild(dropdownArrow);
+
+		const actionsNode = document.createElement('ul');
+        menuNode.appendChild(actionsNode);
+
+		this._actionsNode = actionsNode;
 	}
 
     /**
@@ -124,18 +136,18 @@ class Comment {
 		const actionText = document.createTextNode(actionName);
 		actionNode.appendChild(actionText);
         actionNode.addEventListener('click', callback.bind(this));
-		this._menuNode.appendChild(actionNode);
+		this._actionsNode.appendChild(actionNode);
 	}
 
     hide() {
         for (let commentBlock of this._commentBlocks) {
-            commentBlock.style.display = 'none';
+            commentBlock.classList.add('ievy-hidden');
         }
     }
 
     show() {
         for (let commentBlock of this._commentBlocks) {
-            commentBlock.style.display = '';
+            commentBlock.classList.remove('ievy-hidden');
         }
     }
 
@@ -182,6 +194,8 @@ class Comment {
     }
 }
 
+GM_addStyle(".ievy-hidden { display: none !important; }");
+
 const settings = new FilterSettings();
 settings.filterGravatar('ea0af1e6dffdfa291380200694704d13');
 // HTMLCollection
@@ -198,9 +212,6 @@ for (let commentNode of commentsNodes) {
     });
     comment.addAction('Show', function(event) {
         this.show();
-    });
-    comment.addAction('Block', function(event) {
-        alert('Blocked user ' + event + '  ' + this.authorName );
     });
     console.log('Gravatar> ' + comment.gravatar);
 
