@@ -56,6 +56,38 @@ class FilterSettings {
     }
 
     /**
+     * Filter all comments containing the keyword.
+     */
+    filterKeyword(keyword) {
+        keyword = keyword.trim();
+        if (!keyword) {
+            return;
+        }
+
+        this._keywords.add(keyword);
+        this._keywordRegExp = this._buildRegExp();
+    }
+
+    /**
+     * Build a regular expression that contains all keywords and all keywords must be separate from other words.
+     * Thanks to regexp, I only have to pass comment text once + I don't have to worry about case sensitivity.
+     * @returns Regular expression containin all keywords.
+     */
+    _buildRegExp() {
+        const nonword = '[^a-z0-9]';
+        const keywords = Array.from(this._keywords);
+
+        // Make a complex regexp, so I don't have to check text for each keyword.
+        // https://stackoverflow.com/a/6969486/2622707
+        const regExpText = '(' + nonword +
+            keywords.map(function (keyword, a1, a2) {
+            return keyword.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+        }).join('|') + nonword + ')';
+
+        return new RegExp(regExpText, 'ig');
+    }
+
+    /**
      * Test if the comment should be blocked.
      * @param {Comment} comment - tested comment.
      * @returns {FilterResult}
@@ -67,6 +99,14 @@ class FilterSettings {
 
         if (this._authorNames.has(comment.authorName)) {
             return new FilterResult(true, 'Author of the comment is blocked.');
+        }
+
+        if (this._keywords.size > 0)
+        {
+            const match = comment.text.match(this._keywordRegExp);
+            if (match) {
+                return new FilterResult(true, 'Comment is blocked because of keyword \'' + match.join('\', \'') + '\'.');
+            }
         }
 
         return FilterResult.unfiltered;
@@ -123,6 +163,14 @@ class Comment {
     get gravatar() {
         const gravatarUrl = this._vCardNode.children[0].getAttribute('src');
         return gravatarUrl.replace(/^.*avatar\//,'').replace(/\?.*/,'');
+    }
+
+    get text() {
+        let text = '';
+        for (let commentBlock of this._commentBlocks) {
+            text = text + commentBlock.textContent + '\n';
+        }
+        return text;
     }
 
     /**
@@ -252,7 +300,11 @@ GM_addStyle(".ievy-hidden { display: none !important; }");
 
 const settings = new FilterSettings();
 settings.filterGravatar('ea0af1e6dffdfa291380200694704d13');
-settings.filterAuthor('Pushmi-Pullyu');
+settings.filterKeyword('basement');
+settings.filterKeyword('mommy');
+settings.filterKeyword('FUDster');
+    settings.filterKeyword('anyone');
+        settings.filterKeyword('wager');
 // HTMLCollection
 const commentsNodes = document.getElementsByClassName('comment');
 const comments = new Comments(settings);
@@ -272,6 +324,7 @@ for (let commentNode of commentsNodes) {
 
     const filterResult = settings.test(comment);
     console.log('Filter> ' + filterResult);
+//    console.log('Text> ' + comment.text);
     comment.block(filterResult);
 }
 })();
