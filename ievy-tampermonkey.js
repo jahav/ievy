@@ -32,6 +32,17 @@ class FilterResult {
     }
 }
 
+/**
+ * A class responsible for managing all the stuff.
+ */
+class Comments {
+    /**
+     * Update all nodes for potential changes.
+     */
+    update() {
+    }
+}
+
 class FilterSettings {
     constructor() {
         this._gravatars = new Set();
@@ -52,7 +63,7 @@ class FilterSettings {
      * @param {String} authorName - Name of the author.
      */
     filterAuthor(authorName) {
-        this._authorNames.add(gravatarHash);
+        this._authorNames.add(authorName);
     }
 
     /**
@@ -111,16 +122,22 @@ class Comment {
 
         const menuNode = document.createElement('div');
 		this._commentBodyNode.insertBefore(menuNode, this._metaDataNode);
-
-        const dropdownArrow = document.createElement('a');
-        dropdownArrow.setAttribute('href','#');
-        dropdownArrow.appendChild(document.createTextNode('\u2193'));
-        dropdownArrow.addEventListener('click', function() {
-
-        });
-        menuNode.appendChild(dropdownArrow);
-
 		const actionsNode = document.createElement('ul');
+        actionsNode.classList.add('ievy-hidden');
+
+        const dropdownArrow = document.createElement('button');
+        dropdownArrow.appendChild(document.createTextNode('\u2699')); // unicode gear symbol
+        dropdownArrow.addEventListener('click', function toggleActionVisibility(e) {
+            const actionsClassList = actionsNode.classList;
+            if (actionsClassList.contains('ievy-hidden')) {
+                actionsClassList.remove('ievy-hidden');
+            } else {
+                actionsClassList.add('ievy-hidden');
+            }
+            e.preventDefault();
+        });
+
+        menuNode.appendChild(dropdownArrow);
         menuNode.appendChild(actionsNode);
 
 		this._actionsNode = actionsNode;
@@ -171,7 +188,31 @@ class Comment {
         const messageNode = document.createElement('div');
         messageNode.style.fontStyle = 'italic';
         messageNode.appendChild(document.createTextNode(result.reason));
-        this._commentBodyNode.insertBefore(messageNode, this._replyNode);
+        const showCommentNode = document.createElement('a');
+        showCommentNode.appendChild(document.createTextNode('[Show]'));
+
+        const hideCommentNode = document.createElement('a');
+        hideCommentNode.classList.add('ievy-hidden');
+        hideCommentNode.appendChild(document.createTextNode('[Hide]'));
+
+        const that = this;
+        showCommentNode.addEventListener('click', function showComment(e) {
+            that.show();
+            showCommentNode.classList.add('ievy-hidden');
+            hideCommentNode.classList.remove('ievy-hidden');
+            e.preventDefault();
+        });
+        hideCommentNode.addEventListener('click', function hideComment(e) {
+            that.hide();
+            showCommentNode.classList.remove('ievy-hidden');
+            hideCommentNode.classList.add('ievy-hidden');
+            e.preventDefault();
+        });
+
+        messageNode.appendChild(showCommentNode);
+        messageNode.appendChild(hideCommentNode);
+
+        this._metaDataNode.parentNode.insertBefore(messageNode, this._metaDataNode.nextSibling);
     }
 
     get _replyNode() {
@@ -180,12 +221,12 @@ class Comment {
     }
 
     get _vCardNode() {
-		const vcardNode = this._commentBodyNode.children[0];
+		const vcardNode = this._commentBodyNode.querySelector('.vcard');
         return vcardNode;
     }
 
     get _metaDataNode() {
-		const metaDataNode = this._commentBodyNode.children[1];
+		const metaDataNode = this._commentBodyNode.querySelector('.comment-meta');
         return metaDataNode;
     }
 
@@ -198,6 +239,7 @@ GM_addStyle(".ievy-hidden { display: none !important; }");
 
 const settings = new FilterSettings();
 settings.filterGravatar('ea0af1e6dffdfa291380200694704d13');
+settings.filterAuthor('Pushmi-Pullyu');
 // HTMLCollection
 const commentsNodes = document.getElementsByClassName('comment');
 const comments = [];
