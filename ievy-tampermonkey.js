@@ -128,17 +128,43 @@ class Comment {
 	}
 
     hide() {
-        const commentBlocks = this.node.getElementsByTagName('p');
-        for (let commentBlock of commentBlocks) {
+        for (let commentBlock of this._commentBlocks) {
             commentBlock.style.display = 'none';
         }
     }
 
     show() {
-        const commentBlocks = this.node.getElementsByTagName('p');
-        for (let commentBlock of commentBlocks) {
+        for (let commentBlock of this._commentBlocks) {
             commentBlock.style.display = '';
         }
+    }
+
+    get _commentBlocks() {
+        const commentBlocks = [];
+        for (let commentBlock of this._commentBodyNode.children) {
+            if (commentBlock.tagName.toLowerCase() == 'p') commentBlocks.push(commentBlock);
+        }
+        return commentBlocks;
+    }
+
+    /**
+     * Block the comment.
+     */
+    block(result) {
+        if (!result.isBlocked) {
+            return;
+        }
+
+        this.hide();
+        const messageNode = document.createElement('div');
+        messageNode.style.fontStyle = 'italic';
+        messageNode.appendChild(document.createTextNode(result.reason));
+        this._commentBodyNode.insertBefore(messageNode, this._replyNode);
+    }
+
+    get _replyNode() {
+        const commentBodyChildren = this._commentBodyNode.children;
+        return commentBodyChildren[commentBodyChildren.length - 1];
     }
 
     get _vCardNode() {
@@ -180,5 +206,6 @@ for (let commentNode of commentsNodes) {
 
     const filterResult = settings.test(comment);
     console.log('Filter> ' + filterResult);
+    comment.block(filterResult);
 }
 })();
